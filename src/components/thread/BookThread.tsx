@@ -104,7 +104,6 @@ export function BookThread({
     }
   }, [stream.error]);
 
-  const prevMessageLength = useRef(0);
   useEffect(() => {
     // A new AI turn starts as an empty placeholder message (e.g. while the
     // agent is retrieving/tool-calling) before any answer text streams in.
@@ -113,13 +112,24 @@ export function BookThread({
     // This is a one-way latch per turn (reset by handleSubmit/handleRegenerate):
     // once true, skip re-scanning message text on every streamed token, since
     // that would otherwise cost O(content length) per tick.
-    if (!hasAssistantText) {
-      const lastMessage = messages[messages.length - 1];
-      if (lastMessage?.type === "ai" && messageText(lastMessage).trim().length > 0) {
+    //
+    // Only messages after the latest human message belong to the current
+    // turn — on the 2nd+ turn, messages[messages.length - 1] can briefly
+    // still be the *previous* turn's already-answered AI message (the
+    // optimistic human-message append hasn't landed in this render yet),
+    // which would otherwise immediately re-latch this back to true.
+    // Any new code path that can start a turn's loading state must reset
+    // `hasAssistantText` itself (as handleSubmit/handleRegenerate do) —
+    // this effect only ever latches it forward, never resets it.
+    if (hasAssistantText) return;
+    for (let i = messages.length - 1; i >= 0; i--) {
+      const m = messages[i];
+      if (m.type === "human") break;
+      if (m.type === "ai" && messageText(m).trim().length > 0) {
         setHasAssistantText(true);
+        break;
       }
     }
-    prevMessageLength.current = messages.length;
   }, [messages, hasAssistantText]);
 
   // Right panel auto-jump per EXPERIENCE.md "State Patterns": a single-location
@@ -170,7 +180,6 @@ export function BookThread({
   };
 
   const handleRegenerate = (parentCheckpoint: Checkpoint | null | undefined) => {
-    prevMessageLength.current = prevMessageLength.current - 1;
     setHasAssistantText(false);
     stream.submit(undefined, {
       checkpoint: parentCheckpoint,
