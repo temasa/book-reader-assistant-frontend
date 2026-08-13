@@ -65,12 +65,20 @@ const CITATION_HIGHLIGHT_CLASSES = [
 const SEARCH_MATCH_CLASSES = ["search-match", "bg-sky-300/70", "dark:bg-sky-500/40", "rounded-sm"];
 const SEARCH_MATCH_CURRENT_CLASSES = ["ring-2", "ring-sky-500"];
 
-// "page:12" -> 12, "page:12-45" -> 12 (jump to the range's first page).
+// "page:12" -> 12, "page:12-45" -> 12 (jump to the range's first page). This is the
+// *cited* page number (what's printed on the page), which front matter (roman
+// numerals, an unnumbered cover, ...) commonly makes different from the PDF's
+// physical page position -- resolve it through `pageMap` (Book.page_map) to get the
+// physical position to render/scroll to. A cited number missing from the map (older
+// book ingested before page_map existed, or a page skipped by the map's isdigit()
+// fallback) falls back to treating the cited number as a physical position directly,
+// same as before page_map existed.
 // Returns null (not NaN) for anything unparseable so callers can fall back cleanly.
-function pageNumberFromLocation(location: string): number | null {
+function pageNumberFromLocation(location: string, pageMap: Record<string, number>): number | null {
   const m = /^page:(\d+)/.exec(location);
   if (!m) return null;
-  const n = Number(m[1]);
+  const cited = m[1];
+  const n = pageMap[cited] ?? Number(cited);
   return Number.isFinite(n) && n > 0 ? n : null;
 }
 
@@ -153,7 +161,7 @@ export default function PdfViewer({ book, location }: { book: Book; location: st
   const { location: baseLocation, quote } = location
     ? splitLocationQuote(location)
     : { location: null, quote: null };
-  const targetPage = baseLocation ? pageNumberFromLocation(baseLocation) : null;
+  const targetPage = baseLocation ? pageNumberFromLocation(baseLocation, book.page_map) : null;
 
   useEffect(() => {
     visiblePageRef.current = visiblePage;

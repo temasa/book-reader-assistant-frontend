@@ -14,6 +14,13 @@ export interface Book {
   progress: number;
   created_at: string;
   chapters: Chapter[];
+  // PDF only: cited page number (the "N" in "page:N" citation tags) -> 1-based
+  // physical page position in the rendered PDF. Front matter (roman numerals, an
+  // unnumbered cover, ...) commonly makes the printed page number diverge from the
+  // page's physical position, so a citation's page must be resolved through this map
+  // rather than treated as a physical position directly. Empty for EPUBs and for
+  // books ingested before this field existed.
+  page_map: Record<string, number>;
 }
 
 const BASE_URL =
