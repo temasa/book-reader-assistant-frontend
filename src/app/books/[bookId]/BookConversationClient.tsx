@@ -2,16 +2,42 @@
 
 import { useEffect, useState } from "react";
 import { useQueryState } from "nuqs";
+import { useDefaultLayout } from "react-resizable-panels";
 import { Toaster } from "@/components/ui/sonner";
 import { StreamProvider } from "@/providers/Stream";
 import { ThreadProvider } from "@/providers/Thread";
 import { RightPanelProvider } from "@/components/right-panel/RightPanelContext";
 import { RightPanel } from "@/components/right-panel/RightPanel";
+import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from "@/components/ui/resizable";
 import { BookThread } from "@/components/thread/BookThread";
 import { ArtifactProvider } from "@/components/thread/artifact";
 import { getBook, type Book } from "@/lib/books-api";
 import { Progress } from "@/components/ui/progress";
 import { AlertCircle } from "lucide-react";
+
+const splitLayoutStorage =
+  typeof window === "undefined"
+    ? { getItem: () => null, setItem: () => {} }
+    : {
+        getItem: (key: string) => {
+          try {
+            return window.localStorage.getItem(key);
+          } catch {
+            return null;
+          }
+        },
+        setItem: (key: string, value: string) => {
+          try {
+            window.localStorage.setItem(key, value);
+          } catch {
+            // Storage denied (e.g. private browsing) — split just won't persist.
+          }
+        },
+      };
 
 function threadStorageKey(bookId: string) {
   return `book-thread:${bookId}`;
@@ -48,6 +74,11 @@ function NewThreadButtonBridge({ bookId, children }: { bookId: string; children:
 export function BookConversationClient({ bookId }: { bookId: string }) {
   const [book, setBook] = useState<Book | null>(null);
   const [notFound, setNotFound] = useState(false);
+  const { defaultLayout, onLayoutChanged } = useDefaultLayout({
+    id: "book-conversation-split",
+    panelIds: ["chat", "right-panel"],
+    storage: splitLayoutStorage,
+  });
 
   useEffect(() => {
     let cancelled = false;
@@ -107,14 +138,28 @@ export function BookConversationClient({ bookId }: { bookId: string }) {
           <ArtifactProvider>
             <RightPanelProvider book={book}>
               <ThreadIdSync bookId={bookId} />
-              <div className="min-w-0 flex-1">
-                <NewThreadButtonBridge bookId={bookId}>
-                  {(onNew) => <BookThread book={book} onNewThread={onNew} />}
-                </NewThreadButtonBridge>
-              </div>
-              <div className="w-full max-w-md border-l">
-                <RightPanel />
-              </div>
+              <ResizablePanelGroup
+                orientation="horizontal"
+                defaultLayout={defaultLayout}
+                onLayoutChanged={onLayoutChanged}
+                className="flex-1"
+              >
+                <ResizablePanel id="chat" defaultSize="70" minSize={360} className="min-w-0">
+                  <NewThreadButtonBridge bookId={bookId}>
+                    {(onNew) => <BookThread book={book} onNewThread={onNew} />}
+                  </NewThreadButtonBridge>
+                </ResizablePanel>
+                <ResizableHandle withHandle />
+                <ResizablePanel
+                  id="right-panel"
+                  defaultSize="30"
+                  minSize={320}
+                  maxSize="50%"
+                  className="border-l"
+                >
+                  <RightPanel />
+                </ResizablePanel>
+              </ResizablePanelGroup>
             </RightPanelProvider>
           </ArtifactProvider>
         </StreamProvider>

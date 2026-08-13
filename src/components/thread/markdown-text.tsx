@@ -2,7 +2,7 @@
 
 import "./markdown-styles.css";
 
-import ReactMarkdown from "react-markdown";
+import ReactMarkdown, { defaultUrlTransform } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeKatex from "rehype-katex";
 import remarkMath from "remark-math";
@@ -12,7 +12,7 @@ import { SyntaxHighlighter } from "@/components/thread/syntax-highlighter";
 
 import { TooltipIconButton } from "@/components/thread/tooltip-icon-button";
 import { cn } from "@/lib/utils";
-import { linkifyCitations, parseCitationHref } from "@/lib/citations";
+import { CITATION_SCHEME, linkifyCitations, parseCitationHref } from "@/lib/citations";
 import { BookOpenText } from "lucide-react";
 
 import "katex/dist/katex.min.css";
@@ -277,6 +277,15 @@ const defaultComponents: any = {
   },
 };
 
+// react-markdown's default urlTransform strips unrecognized schemes (it only
+// allows a small http/https/mailto-style allowlist), which silently zeroes out
+// our synthetic `citation://` links before the `a` renderer ever sees them.
+// Pass those through untouched; defer everything else to the default sanitizer.
+function citationAwareUrlTransform(url: string): string {
+  if (url.startsWith(CITATION_SCHEME)) return url;
+  return defaultUrlTransform(url);
+}
+
 const MarkdownTextImpl: FC<{ children: string }> = ({ children }) => {
   return (
     <div className="markdown-content">
@@ -284,6 +293,7 @@ const MarkdownTextImpl: FC<{ children: string }> = ({ children }) => {
         remarkPlugins={[remarkGfm, remarkMath]}
         rehypePlugins={[rehypeKatex]}
         components={defaultComponents}
+        urlTransform={citationAwareUrlTransform}
       >
         {linkifyCitations(children)}
       </ReactMarkdown>
