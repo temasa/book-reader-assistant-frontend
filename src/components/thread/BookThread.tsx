@@ -16,6 +16,7 @@ import { extractCitationLocations } from "@/lib/citations";
 import { useRightPanel } from "../right-panel/RightPanelContext";
 import type { Book } from "@/lib/books-api";
 import { useQueryState, parseAsBoolean } from "nuqs";
+import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 
 function StickyToBottomContent(props: {
   content: ReactNode;
@@ -203,8 +204,15 @@ export function BookThread({
   return (
     <div className="flex h-full w-full flex-col overflow-hidden">
       <div className="flex items-center justify-between gap-3 border-b p-3">
-        <p className="truncate text-sm font-medium">{book.title}</p>
-        <div className="flex items-center gap-2">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <p className="min-w-0 truncate text-sm font-medium">{book.title}</p>
+          </TooltipTrigger>
+          <TooltipContent side="bottom" align="start">
+            {book.title}
+          </TooltipContent>
+        </Tooltip>
+        <div className="flex shrink-0 items-center gap-2">
           <Button variant="ghost" size="sm" onClick={showCollection}>
             Collection
           </Button>
@@ -261,7 +269,7 @@ export function BookThread({
             </>
           }
           footer={
-            <div className="sticky bottom-0 flex flex-col items-center gap-4 bg-white">
+            <div className="sticky bottom-0 flex flex-col items-center gap-4 bg-background">
               <ScrollToBottom className="animate-in fade-in-0 zoom-in-95 absolute bottom-full left-1/2 mb-4 -translate-x-1/2" />
               <div className="bg-muted relative z-10 mx-auto mb-8 w-full max-w-3xl rounded-2xl border shadow-xs">
                 <form onSubmit={handleSubmit} className="mx-auto grid max-w-3xl grid-rows-[1fr_auto] gap-2">

@@ -65,18 +65,32 @@ export function BookList() {
           const content = (
             <Card
               className={cn(
-                "flex flex-row items-center gap-3 p-3",
-                clickable ? "cursor-pointer hover:bg-muted/50" : "opacity-70",
-                isActive && "border-primary",
+                "flex flex-row items-center gap-3 p-3 transition-all",
+                clickable
+                  ? "cursor-pointer hover:border-primary/40 hover:shadow-sm"
+                  : "opacity-70",
+                isActive && "border-primary bg-primary/5 ring-1 ring-primary/20",
               )}
             >
               {book.file_type === "pdf" ? (
-                <FileText className="text-muted-foreground size-5 shrink-0" />
+                <FileText
+                  className={cn(
+                    "size-5 shrink-0",
+                    isActive ? "text-primary" : "text-muted-foreground",
+                  )}
+                />
               ) : (
-                <BookOpenText className="text-muted-foreground size-5 shrink-0" />
+                <BookOpenText
+                  className={cn(
+                    "size-5 shrink-0",
+                    isActive ? "text-primary" : "text-muted-foreground",
+                  )}
+                />
               )}
               <div className="flex min-w-0 flex-1 flex-col gap-1">
-                <p className="truncate text-sm font-medium">{book.title}</p>
+                <p className="truncate text-sm font-medium" title={book.title}>
+                  {book.title}
+                </p>
                 <StatusBadge book={book} />
               </div>
             </Card>

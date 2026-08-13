@@ -52,11 +52,20 @@ export function UploadControl({ onUploaded }: { onUploaded: () => void }) {
       }}
       onClick={() => inputRef.current?.click()}
       className={cn(
-        "flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border border-dashed p-6 text-center transition-colors",
-        dragOver ? "border-primary bg-muted" : "border-border hover:bg-muted/50",
+        "group flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border border-dashed p-6 text-center transition-colors",
+        dragOver
+          ? "border-primary bg-primary/5"
+          : "border-border hover:border-primary/40 hover:bg-muted/50",
       )}
     >
-      <UploadCloud className="text-muted-foreground size-6" />
+      <UploadCloud
+        className={cn(
+          "size-6 transition-colors",
+          dragOver
+            ? "text-primary"
+            : "text-muted-foreground group-hover:text-primary/70",
+        )}
+      />
       <p className="text-sm font-medium">
         {uploading ? "Uploading…" : "Upload a book"}
       </p>
